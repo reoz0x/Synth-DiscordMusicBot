@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/ZenixCodez/Discord-MusicBot/issues"
   },
-  "homepage": "https://github.com/ZenixCodez/Discord-MusicBot#readme"
+  "homepage": "https://github.com/ZenixCodez/Discord-MusicBot#readme",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "discord.js": "^14.13.0"
+  }
 }
