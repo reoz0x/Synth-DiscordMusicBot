@@ -3,8 +3,8 @@ const path = require("node:path");
 const { Client, Collection, Events, GatewayIntentBits } = require("discord.js");
 
 class Main extends Client {
-  constructor(x) {
-    super(x);
+  constructor() {
+    super({ intents: [GatewayIntentBits.Guilds] });
 
     this.commands = new Collection();
     this.initCommands();
@@ -44,9 +44,16 @@ class Main extends Client {
     }
   }
 
+  initEvents() {
+    this.on(Events.InteractionCreate, (interaction) => {
+      if (!interaction.isChatInputCommand()) return;
+      console.log(interaction);
+    });
+  }
+
   async wakeUp(token) {
     await this.login(token);
-    this.emitStatus(`[Synth Music - Status]: I'm awake [${this.user.tag}]`)
+    this.emitStatus(`[Synth Music - Status]: I'm awake [${this.user.tag}]`);
   }
 }
 

@@ -1,6 +1,5 @@
-require('dotenv').config();
-const Client = require("./Client/main")
-const { GatewayIntentBits } = require("discord.js");
-const Synth = new Client({ intents: [GatewayIntentBits.Guilds] })
+require("dotenv").config();
+const Client = require("./Client/main");
+const Synth = new Client();
 
 module.exports = Synth;
