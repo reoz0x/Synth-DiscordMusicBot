@@ -8,11 +8,18 @@ class Main extends Client {
 
     this.commands = new Collection();
     this.initCommands();
+    this.wakeUp(process.env.Token);
   }
 
   emitWarning(warning) {
     import("chalk").then(({ default: chalk }) => {
       return console.log(chalk.yellow(warning));
+    });
+  }
+
+  emitStatus(status) {
+    import("chalk").then(({ default: chalk }) => {
+      return console.log(chalk.green(status));
     });
   }
 
@@ -35,6 +42,11 @@ class Main extends Client {
         );
       }
     }
+  }
+
+  async wakeUp(token) {
+    await this.login(token);
+    this.emitStatus(`[Synth Music - Status]: I'm awake [${this.user.tag}]`)
   }
 }
 
