@@ -7,16 +7,44 @@ const {
   GatewayIntentBits,
   REST,
   Routes,
+  GatewayDispatchEvents,
 } = require("discord.js");
+const { Riffy } = require("riffy");
 
 class Main extends Client {
   constructor() {
-    super({ intents: [GatewayIntentBits.Guilds] });
+    super({
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.MessageContent,
+      ],
+    });
 
     this.commands = new Collection();
+
+    this.lavanodes = [
+      {
+        host: "localhost",
+        password: "youshallnotpass",
+        port: 2333,
+        secure: false,
+      },
+    ];
+
+    this.riffy = new Riffy(this, this.lavanodes, {
+      send: (payload) => {
+        const guild = this.guilds.cache.get(payload.d.guild_id);
+        if (guild) guild.shard.send(payload);
+      },
+      defaultSearchPlatform: "spsearch",
+      restVersion: "v4",
+    });
+
+    this.wakeUp(process.env.Token);
     this.initCommands();
     this.initEvents();
-    this.wakeUp(process.env.Token);
   }
 
   emitWarning(warning) {
@@ -86,27 +114,52 @@ class Main extends Client {
       try {
         await command.run(interaction);
       } catch (error) {
-        this.emitError(`[Synt Music - ERROR]: ${error}`);
+        this.emitError(`[Synth Music - ERROR]: ${error}`);
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp({
             content:
-              "An unexpected error arose during the execution of this command",
+              "[Synth Music - ERROR]: An unexpected error arose during the execution of this command",
             ephemeral: true,
           });
         } else {
           await interaction.reply({
             content:
-              "An unexpected error arose during the execution of this command",
+              "[Synth Music - ERROR]: An unexpected error arose during the execution of this command",
             ephemeral: true,
           });
         }
       }
     });
+
+    this.on(Events.ClientReady, async () => {
+      this.emitStatus(`[Synth Music - Status]: I'm awake [${this.user.tag}]`);
+      await this.riffy.init(this.user.id);
+    });
+
+    this.riffy.on("nodeConnect", (node) => {
+      this.emitStatus(
+        "[Synth Music - Status]: Connection established to the lavalink server"
+      );
+    });
+
+    this.riffy.on("nodeError", (node, error) => {
+      this.emitError(`[Synth Music - ERROR]: Node "${node.name}" encountered an error: ${error.message}`)
+    });
+
+    this.on(Events.Raw, (d) => {
+      if (
+        ![
+          GatewayDispatchEvents.VoiceStateUpdate,
+          GatewayDispatchEvents.VoiceServerUpdate,
+        ].includes(d.t)
+      )
+        return;
+      this.riffy.updateVoiceState(d);
+    });
   }
 
   async wakeUp(token) {
     await this.login(token);
-    this.emitStatus(`[Synth Music - Status]: I'm awake [${this.user.tag}]`);
   }
 }
 
