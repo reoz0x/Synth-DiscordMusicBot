@@ -9,7 +9,6 @@ const {
   Routes,
   GatewayDispatchEvents,
 } = require("discord.js");
-const { Riffy } = require("riffy");
 
 class Main extends Client {
   constructor() {
@@ -23,24 +22,6 @@ class Main extends Client {
     });
 
     this.commands = new Collection();
-
-    this.lavanodes = [
-      {
-        host: "localhost",
-        password: "youshallnotpass",
-        port: 2333,
-        secure: false,
-      },
-    ];
-
-    this.riffy = new Riffy(this, this.lavanodes, {
-      send: (payload) => {
-        const guild = this.guilds.cache.get(payload.d.guild_id);
-        if (guild) guild.shard.send(payload);
-      },
-      defaultSearchPlatform: "spsearch",
-      restVersion: "v4",
-    });
 
     this.wakeUp(process.env.Token);
     this.initCommands();
@@ -131,30 +112,8 @@ class Main extends Client {
       }
     });
 
-    this.on(Events.ClientReady, async () => {
+    this.on(Events.ClientReady, () => {
       this.emitStatus(`[Synth Music - Status]: I'm awake [${this.user.tag}]`);
-      await this.riffy.init(this.user.id);
-    });
-
-    this.riffy.on("nodeConnect", (node) => {
-      this.emitStatus(
-        "[Synth Music - Status]: Connection established to the lavalink server"
-      );
-    });
-
-    this.riffy.on("nodeError", (node, error) => {
-      this.emitError(`[Synth Music - ERROR]: Node "${node.name}" encountered an error: ${error.message}`)
-    });
-
-    this.on(Events.Raw, (d) => {
-      if (
-        ![
-          GatewayDispatchEvents.VoiceStateUpdate,
-          GatewayDispatchEvents.VoiceServerUpdate,
-        ].includes(d.t)
-      )
-        return;
-      this.riffy.updateVoiceState(d);
     });
   }
 
