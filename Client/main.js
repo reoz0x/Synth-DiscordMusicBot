@@ -9,6 +9,7 @@ const {
   Routes,
   GatewayDispatchEvents,
 } = require("discord.js");
+const { Manager } = require("magmastream");
 
 class Main extends Client {
   constructor() {
@@ -22,6 +23,27 @@ class Main extends Client {
     });
 
     this.commands = new Collection();
+    this.nodes = [
+      {
+        host: "127.0.0.1",
+        identifier: "Node 1",
+        password: "youshallnotpass",
+        port: 2333,
+        retryAmount: 1000,
+        retrydelay: 10000,
+        resumeStatus: true,
+        resumeTimeout: 1000,
+        secure: false,
+      },
+    ];
+
+    this.manager = new Manager({
+      nodes: this.nodes,
+      send: (id, payload) => {
+        const guild = this.guilds.cache.get(id);
+        if (guild) guild.shard.send(payload);
+      },
+    });
 
     this.wakeUp(process.env.Token);
     this.initCommands();
@@ -114,7 +136,20 @@ class Main extends Client {
 
     this.on(Events.ClientReady, () => {
       this.emitStatus(`[Synth Music - Status]: I'm awake [${this.user.tag}]`);
+      this.manager.init(this.user.id);
     });
+
+    this.manager.on("nodeConnect", (node) => {
+      this.emitStatus(`[Synth Music - Status]: Successfully connected to Lavalink ${node.options.identifier}`);
+    });
+
+    this.manager.on("nodeError", (node, error) => {
+      this.emitError(
+        `[Synth Music - ERROR]: ${node.options.identifier} encountered an error: ${error.message}`
+      );
+    });
+
+    this.on("raw", (d) => this.manager.updateVoiceState(d));
   }
 
   async wakeUp(token) {
